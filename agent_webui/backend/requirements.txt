@@ -1,0 +1,11 @@
+# WebUI 网关依赖（FastAPI + Uvicorn）
+#
+# ⚠️ 这两项**已经包含在项目根的 requirements.txt 里**。
+#   · 常规安装：在项目根执行一次即可 ——
+#         pip install -r requirements.txt
+#   · 本文件只在你想给网关建**独立 venv**（agent_webui/venv-gateway）时才单独使用：
+#         webui.bat --setup
+#
+# 用法与架构见 agent_webui/README.md
+fastapi>=0.115
+uvicorn>=0.30

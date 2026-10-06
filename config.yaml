@@ -1,0 +1,96 @@
+# AetherBreath 项目配置文件
+# 所有路径均相对于项目根目录（PROJECT_ROOT）
+
+project:
+  name: AetherBreath
+
+paths:
+  # 目录结构
+  working_memory: "agent_memory/working_memory"
+  long_memory: "agent_memory/long_memory"
+  soul_file: "agent_memory/long_memory/SOUL.md"
+  agents_file: "agent_memory/long_memory/AGENTS.md"
+  workspace: "agent_workspace"
+  knowledge_base: "agent_knowledge_base"
+  attachments: "agent_workspace/attachments"   # 附件落盘根（按会话分子目录）
+  chroma_db: "chroma_db"
+  memory_file: "agent_memory/long_memory/MEMORY.md"
+  user_file: "agent_memory/long_memory/USER.md"
+  skills_dir: "agent_skills"
+  skill_registry: "agent_skills/SKILL_REGISTRY.md"
+  # MCP：station 目录（一个 server = 一个文件夹，**文件夹存在即注册**）
+  mcp_stations: "agent_MCP"
+  # 注册表（MCP_REGISTRY.md，每 station 一行）是**派生值**：永远落在 station 目录里
+  # （`<station 目录>/MCP_REGISTRY.md`），不再单独配。
+
+# MCP 总闸：false = 连注册表与两个元工具都不注入（"MCP 常开"由这里决定）
+mcp:
+  enabled: true
+
+defaults:
+  model: "deepseek-flash"        # 官方现行名（旧 deepseek-v4-flash 已下线，由 V4.1-Flash 代答）
+  reasoning_effort: "high"
+  thinking_enabled: true
+  max_iterations: 100
+
+# LLM 能力声明（厂商无关：换模型只改这里 + .env 三件套）
+llm:
+  # 视觉能力：auto = 按模型名初判 + 首次 400 自动降级并缓存 | true = 强制 | false = 禁用
+  vision: auto
+  # 图片处理：low(缩到512x512，省token) | high | original | auto
+  vision_detail: auto
+
+# 附件（前端上传的文件 → 只转成文本块/图片块，绝不执行）
+attachments:
+  enabled: true
+  max_file_mb: 20            # 单文件上限
+  max_per_message: 10        # 单条消息附件数上限
+  max_text_chars: 200000     # 文本提取字符上限（超出截断并标注）
+  keep_recent_images: 2      # 老图折叠：只把最近 N 条含附件的消息展开成真图，
+                             # 更早的折叠为文本占位（附件进了历史后每回合都会重发整张图）
+                             # 设 0 = 全部折叠；想永不折叠就调大，如 999
+
+# 上下文管理器：原文永不动，压缩只生产「视图」发给模型
+# 设计：agent_workspace/上下文管理器/DESIGN.md ｜ 视图落盘：agent_memory/.condensed_sessions/
+context_manager:
+  enabled: true                    # 2026-09-13 验收通过后开启；改 false 即完全回退到"原文直发"
+  window_tokens: 1000000           # 模型窗口（1M）；model_windows 未命中时用这个
+  trigger_ratio: 0.55              # 用到窗口 55% 触发压缩（唯一判据；轮数防线 2026-09-22 已删）
+  keep_recent_rounds: 10           # 保护段 = 最近 10 轮（不再用作触发阈值）
+  keep_recent_thinking_rounds: 3   # 最近 3 轮保留 reasoning_content，其余剥离
+  cooldown_rounds: 2               # 压缩后至少隔 2 轮再压（防抖）
+  clear_tool_args: true            # 工具参数清理为「工具名 + 目的前 N 字」
+  arg_preview_chars: 120
+  tool_result_preview_chars: 200   # 留给将来"折叠段保留前 N 字符"用
+  protect_first_round: true        # 首轮永不折叠
+  absolute_words: ["不要", "必须", "禁止", "不对", "错了", "别再", "停止", "记住"]
+  model_windows:
+    default: 1000000
+
+# ===== RAG（检索增强生成）=====
+# 索引构建：python agent_workspace/RAG模块实现/build_index.py
+# 检索工具：agent_tools/rag.py::rag_query（Agent 自主调用）
+rag:
+  # ---- 索引 ----
+  chunk_size: 512                     # 单块最大 token（bge-m3 tokenizer 计）
+  chunk_overlap: 80                   # 相邻块重叠 token
+  embedding_model: "BAAI/bge-m3"      # dense 向量模型（多语言）
+  knowledge_dir: "agent_knowledge_base"   # 语料目录（相对项目根）
+  encode_batch_size: 16               # 向量化批大小
+
+  # ---- 检索 ----
+  recall_k: 30                        # BM25 / 向量 各自粗召回量
+  rrf_k: 60                           # RRF 融合常数
+  final_k: 3                          # cross-encoder 精排后返回条数
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L6-v2"
+  rerank_pool: 60                     # 送入精排的融合候选上限（默认 2*recall_k）
+  min_score: 0.0                      # 精排分数下限（cross-encoder 原始分；0 = 不过滤，正分才算相关）
+
+  # ---- HyDE（假想答案检索，默认关）----
+  enable_hyde: false
+
+  # ---- 向量库 ----
+  vector_store: "chroma"
+  chroma_path: "chroma_db"            # ChromaDB 持久化目录（相对项目根）
+  collection_name: "ab_knowledge"     # cosine 空间；换 embedding 模型必须重建
+  bm25_path: "chroma_db/bm25_corpus.json"   # BM25 语料（与向量库同处）

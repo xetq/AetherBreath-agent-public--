@@ -1,0 +1,454 @@
+  .creature {
+    position: relative;
+    width: 440px;
+    height: 440px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 60px;
+    cursor: pointer;
+  }
+
+  /* 2026-09-24 新稿新增：游走层。位移由 JS 的 rAF 主循环写进 transform，
+     这里只负责给它一个定位上下文（.symbol / .dialog-bubble 都挂在它里面，
+     于是会跟着形象一起走）。原稿的 .creature:hover 放大与 transition 已按新稿删除。 */
+  .mover {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    will-change: transform;
+  }
+
+  .creature-squash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    transform-origin: center top;
+  }
+
+  .creature-float { transition: transform 0.4s ease; }
+
+  .action-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform-origin: center 55%;
+    will-change: transform;
+  }
+
+  .creature-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+    position: relative;
+  }
+
+  .state-idle       .creature-float { animation: float 4.5s ease-in-out infinite; }
+  .state-thinking   .creature-float { animation: float 3s ease-in-out infinite; }
+  .state-executing  .creature-float { animation: float 1.6s ease-in-out infinite; }
+  .state-error      .creature-float { animation: none; }   /* 新稿：error 的抖动改由 rAF 的双频 sin 提供，见 ABCreature.tsx */
+
+  .yao-top {
+    width: 130px;
+    height: 11px;
+    border-radius: 6px;
+    background: #1e3340;
+    box-shadow: 0 0 8px rgba(0, 150, 180, 0.15);
+    transition: all 0.72s cubic-bezier(0.42, 0, 0.35, 1);
+    transform-origin: center;
+  }
+
+  .middle-pair-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .middle-pair {
+    --tx: 0px;
+    --ty: 0px;
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    height: 18px;
+    transform: translate(var(--tx), var(--ty));
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  .bar-wrap {
+    display: flex;
+    align-items: center;
+    transform-origin: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bar {
+    width: 56px;
+    height: 11px;
+    border-radius: 6px;
+    background: #1e3340;
+    box-shadow: 0 0 8px rgba(0, 150, 180, 0.15);
+    transform-origin: center;
+    transition: background 0.72s ease,
+                box-shadow 0.72s ease,
+                transform 0.72s cubic-bezier(0.42, 0, 0.35, 1),
+                width 0.72s cubic-bezier(0.42, 0, 0.35, 1),
+                height 0.72s cubic-bezier(0.42, 0, 0.35, 1);
+  }
+  .bar.left  { transform-origin: right center; }
+  .bar.right { transform-origin: left center; }
+
+  .yao-bottom {
+    width: 130px;
+    height: 11px;
+    border-radius: 6px;
+    background: #1e3340;
+    box-shadow: 0 0 8px rgba(0, 150, 180, 0.15);
+    transition: all 0.72s cubic-bezier(0.42, 0, 0.35, 1);
+    transform-origin: center;
+  }
+
+  .combat-layer {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 84px;
+    pointer-events: none;
+    opacity: 1;
+  }
+
+  /* ==================== 刃拖尾 ==================== */
+  .blade-trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 260px;
+    height: 44px;
+    transform-origin: 0 0;
+    transform: translate(122px, 58px) rotate(90deg);
+    pointer-events: none;
+    opacity: 0;
+    border-radius: 22px;
+    background: linear-gradient(90deg,
+                rgba(0, 255, 157, 0.00) 0%,
+                rgba(0, 255, 157, 0.10) 15%,
+                rgba(0, 255, 157, 0.55) 60%,
+                rgba(0, 255, 157, 0.95) 88%,
+                rgba(0, 255, 157, 0.00) 100%);
+    will-change: transform, opacity, filter;
+  }
+
+  .weapon-group {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    transform-origin: 0 0;
+    transform: translate(122px, 58px) rotate(90deg);
+    will-change: transform;
+    transition: transform 0.9s cubic-bezier(0.45, 0, 0.55, 1);
+  }
+
+  .weapon-blade {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
+    width: 100%;
+    height: 100%;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 17px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: visible;
+    letter-spacing: 0.6px;
+    transition: color 0.72s ease, text-shadow 0.72s ease, opacity 0.72s ease;
+  }
+
+  .state-idle .weapon-blade {
+    color: #8ab0c0;
+    text-shadow:
+      0 0 4px rgba(58, 100, 120, 0.6),
+      0 0 10px rgba(58, 100, 120, 0.4);
+  }
+
+  .state-thinking .weapon-blade {
+    color: #c8e8f8;
+    text-shadow:
+      0 0 4px #00d4ff,
+      0 0 10px #00d4ff,
+      0 0 22px rgba(0, 212, 255, 0.7);
+  }
+
+  .state-executing .weapon-blade {
+    color: #e6ffef;
+    text-shadow:
+      0 0 4px #00ff9d,
+      0 0 10px #00ff9d,
+      0 0 22px rgba(0, 255, 157, 0.7);
+  }
+
+  .state-error .weapon-blade {
+    color: #ffd0d8;
+    text-shadow:
+      0 0 4px #ff3b4e,
+      0 0 10px #ff3b4e,
+      0 0 22px rgba(255, 59, 78, 0.7);
+  }
+
+  .fx-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 20;
+  }
+
+  .debris {
+    position: absolute;
+    font-family: "Consolas", "Courier New", monospace;
+    font-weight: 700;
+    color: #d0ffe6;
+    white-space: nowrap;
+    text-shadow:
+      0 0 4px #00ff9d,
+      0 0 10px #00ff9d,
+      0 0 22px rgba(0, 255, 157, 0.75);
+    will-change: transform, opacity;
+  }
+
+  /* ==================== 装饰符号 ==================== */
+  .symbol {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.72s ease;
+  }
+  .symbol.question {
+    top: -30px; right: 100px;   /* 新稿：上移到形象正上方 */
+    font-size: 28px; font-weight: 700;
+    color: #00d4ff;
+    text-shadow: 0 0 12px rgba(0, 212, 255, 0.9);
+    font-family: "Georgia", serif;
+  }
+  .symbol.sweat {
+    top: -10px; right: 96px;    /* 新稿：同上 */
+    width: 14px; height: 18px;
+    background: #ff6b8a;
+    border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
+    box-shadow: 0 0 14px rgba(255, 107, 138, 0.9);
+  }
+
+
+  /* ============ 对话框（2026-09-24 新稿新增） ============
+     🔴 尺寸一律乘 --inv-scale（= 1/舞台缩放）。设计稿的 13px 字号在控制台里要被
+     scale(0.387) 缩一遍，直接写 13px 只剩 5px，根本看不清。乘回去之后
+     「视觉字号恒为 13 屏幕像素」，不随舞台大小变。
+     定位用 bottom：底边锚在 .mover 顶边上方 52px（= 设计稿里气泡底边的位置，
+     .mover 顶边在设计坐标 y=60，气泡底边 y=8）。气泡变高时向上长，不会压到形象。
+     🔴 层级（主人 2026-09-25 定）：z-index 取负值，让气泡落在 .mover 层叠的最底 ——
+     战斗层的刀/剑要从它上面过，否则气泡会把刀盖住（这是覆盖问题，不是位置问题）。*/
+  .dialog-bubble {
+    position: absolute;
+    bottom: calc(100% + 52px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px) scale(0.6);
+    transform-origin: 50% 100%;
+    padding: calc(10px * var(--inv-scale, 1)) calc(16px * var(--inv-scale, 1));
+    background: #0f151c;
+    border: 1px solid rgba(0, 212, 255, 0.65);
+    border-radius: calc(10px * var(--inv-scale, 1));
+    color: #c8e8f8;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: calc(13px * var(--inv-scale, 1));
+    line-height: 1.4;
+    letter-spacing: 0.4px;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow:
+      0 0 10px rgba(0, 212, 255, 0.35),
+      0 0 28px rgba(0, 212, 255, 0.15),
+      inset 0 0 10px rgba(0, 212, 255, 0.06);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.22s ease-out,
+      transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, opacity;
+    z-index: -1;      /* 图层下沉：让战斗层的刀/剑从气泡上面过（覆盖问题，非位置）*/
+  }
+
+  .dialog-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: calc(-6px * var(--inv-scale, 1));
+    left: 50%;
+    width: calc(10px * var(--inv-scale, 1));
+    height: calc(10px * var(--inv-scale, 1));
+    margin-left: calc(-5px * var(--inv-scale, 1));
+    background: #0f151c;
+    border-right: 1px solid rgba(0, 212, 255, 0.65);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.65);
+    transform: rotate(45deg);
+    box-shadow: 2px 2px 6px rgba(0, 212, 255, 0.15);
+  }
+
+  .dialog-bubble.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  /* ==================== 状态样式 ==================== */
+  .state-idle .yao-top,
+  .state-idle .yao-bottom { background: #1e3340; }
+  .state-idle .bar {
+    background: #2a4a5a;
+    animation: breathe-bar 3.8s ease-in-out infinite;
+  }
+
+  .state-thinking .yao-top { background: #0a3a4a; }
+  .state-thinking .bar {
+    background: #00d4ff;
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.75),
+                0 0 36px rgba(0, 212, 255, 0.35);
+    animation: glow-bar 1.8s ease-in-out infinite;
+  }
+  .state-thinking .bar.left  { transform: rotate(-18deg); }
+  .state-thinking .bar.right { transform: rotate(18deg); }
+  .state-thinking .yao-bottom { background: #1e3340; }
+  .state-thinking .symbol.question {
+    opacity: 1;
+    animation: question-float 2s ease-in-out infinite;
+  }
+
+  .state-executing .yao-top { background: #0a3a2a; }
+  .state-executing .bar {
+    width: 62px;
+    background: #00ff9d;
+    box-shadow: 0 0 22px rgba(0, 255, 157, 0.9),
+                0 0 44px rgba(0, 255, 157, 0.45);
+    animation: glow-bar 0.28s ease-in-out infinite;
+  }
+  .state-executing .bar.left,
+  .state-executing .bar.right { transform: rotate(0deg); }
+
+  .state-executing .yao-bottom {
+    background: #00ff9d;
+    box-shadow: 0 0 20px rgba(0, 255, 157, 0.8),
+                0 0 40px rgba(0, 255, 157, 0.4);
+    animation: pulse-down 0.4s ease-in-out infinite;
+  }
+
+  .state-error .yao-top,
+  .state-error .yao-bottom {
+    background: #ff3b4e !important;
+    box-shadow: 0 0 20px rgba(255, 59, 78, 0.9),
+                0 0 40px rgba(255, 59, 78, 0.5) !important;
+  }
+  .state-error .bar {
+    background: #ff3b4e !important;
+    box-shadow: 0 0 20px rgba(255, 59, 78, 0.9),
+                0 0 40px rgba(255, 59, 78, 0.5) !important;
+    animation: flicker 0.18s ease-in-out infinite !important;
+  }
+  .state-error .bar.left  { transform: rotate(0deg); }
+  .state-error .bar.right { transform: rotate(0deg); }
+  .state-error .symbol.sweat {
+    opacity: 1;
+    animation: sweat-drop 1.2s ease-in infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+  @keyframes shiver {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-3px); }
+    75%      { transform: translateX(3px); }
+  }
+  @keyframes breathe-bar {
+    0%, 100% { transform: scaleY(0.7);  filter: brightness(0.85); }
+    50%      { transform: scaleY(1.3);  filter: brightness(1.15); }
+  }
+  @keyframes glow-bar {
+    0%, 100% { filter: brightness(0.85); }
+    50%      { filter: brightness(1.45); }
+  }
+  @keyframes flicker {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(1.8); }
+    100% { filter: brightness(1); }
+  }
+  @keyframes pulse-down {
+    0%, 100% { transform: scaleX(1);    filter: brightness(1); }
+    50%      { transform: scaleX(1.06); filter: brightness(1.5); }
+  }
+  @keyframes question-float {
+    0%, 100% { transform: translateY(0);    opacity: 0.5; }
+    50%      { transform: translateY(-6px); opacity: 1; }
+  }
+  @keyframes sweat-drop {
+    0%   { transform: translateY(0)    scale(0.5); opacity: 0; }
+    20%  { transform: translateY(2px)  scale(1);   opacity: 1; }
+    100% { transform: translateY(28px) scale(0.8); opacity: 0; }
+  }
+
+/* ================================================================
+   集成层（2026-09-23 接入 WebUI 控制台预留区）
+   上方规则从 agent_workspace/AB形象设计/*.html 原样提取，仅剔除：
+     · * / body / body::before 三条全局规则（会污染整个 WebUI）
+     · .status-text / .data-row / .controls（主人裁决：附加件全删）
+   本层是 WebUI 侧新增：舞台负责「裁剪 + 自适应缩放」。
+   ================================================================ */
+
+/* 预留区容器：作为绝对定位锚点，并把飞出舞台的内容裁掉
+   （碎片飞行半径已在 TSX 里按 SPREAD 同比收窄，正常不会碰到边缘） */
+.ab-host {
+  position: relative;
+  overflow: hidden;
+  /* 面板可以很矮（.tl-wrap 的最小高是 84px），但再矮也得让形象能看清：
+     低于这个高度就让它被裁 —— 不跟概况卡/编排器抢空间 */
+  min-height: 140px;
+}
+
+.ab-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 原 body::before 的径向光晕，挪进舞台（不再是全页 fixed） */
+.ab-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, rgba(0, 180, 220, 0.06) 0%, transparent 60%);
+  transition: background 0.8s;
+}
+
+/* 缩放层：尺寸交给 .creature 的 440×440 设计框，位移/缩放由 JS 内联样式给 */
+.ab-scaler {
+  flex: 0 0 auto;
+  will-change: transform;
+}

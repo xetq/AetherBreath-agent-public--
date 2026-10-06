@@ -1,0 +1,84 @@
+# ---- 密钥与本地配置（绝不提交） ----
+.env
+*.env
+!.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.pytest_cache/
+
+# ---- 运行时产物 ----
+agent_logs/
+# chroma_db 不再忽略：17 篇语料的源 .md 已删，向量库是唯一副本，0.6MB，属资产而非产物
+hf_cache/
+agent_memory/working_memory/
+*.tmp
+
+# ---- 可再生环境（一条命令就能重建的东西，永不提交）----
+# 注：原 venv/ 挡不住 venv-gateway/venv-* 这类命名，故放宽
+node_modules/
+venv*/
+.venv/
+envs/
+
+# NLP 课程便携 Python 解释器：26505 个文件 / 758 MB，非本项目产物
+agent_workspace/nlp/
+
+# ---- MCP 运行时产物（失败计数与备份：机器所有，天天变）----
+# 注：station 文件夹（STATION.md / tools.yaml）与 MCP_REGISTRY.md **要提交**
+#     （那是注册与 schema 的真相源，装配了什么应当可复查）；下面是纯运行时痕迹。
+agent_MCP/.state/
+agent_MCP/.trash/
+
+# ---- 手工备份（建基线后退役，别再新增）----
+*.bak
+*.bak*
+
+# ---- 运行时缓存（天天变，制造脏 diff 让安全网变吵）----
+agent_tools/network_cache.json
+agent_tools/quota.json
+agent_tools/cache/
+agent_workspace/.tmp_exec/
+*.log
+
+# ---- 附件落盘（用户上传的原始文件：运行时数据，体积随使用增长）----
+# 判据与 working_memory 同理：它不是"一条命令能重建"的东西，但也不该让仓库随使用膨胀
+# （单文件上限 20MB，且同一张图会在历史里反复出现）。要留存请自行拷贝出去。
+agent_workspace/attachments/
+
+# ---- 上下文管理器视图落盘（2026-09-13 起）----
+# 视图 = working_memory 原文的确定性函数，随时可重算；且含对话内容（隐私）
+agent_memory/.condensed_sessions/
+# ---- WebUI 回合中期输出 sidecar（运行时数据：每轮对话的进度文本）----
+agent_memory/.webui_turns/
+
+# ---- WebUI 计量账本（运行时数据：跨网关重启常驻的 token 用量）----
+agent_webui/.state/
+
+# ---- 第三方解压源码（同目录 .tar.gz 可重建，661 个文件）----
+agent_workspace/headroom集成评估/src/
+# headroom 评估：源码包与提取件体积大且可从 PyPI 重建，只留结论与证据
+agent_workspace/headroom集成评估/*.tar.gz
+agent_workspace/headroom集成评估/compress.py
+agent_workspace/headroom集成评估/content_router.py
+agent_workspace/headroom集成评估/fetch_stdout.txt
+
+# 注：勿加裸 Lib/ Scripts/ DLLs/ —— 本机 core.ignorecase=true 会连带吃掉 agent_skills/*/scripts/ 等真实代码
+
+# gh CLI 官方解压包（56M：zip + bin/cache/data，官方压缩包可重建，非本项目产物）
+agent_workspace/扩展包/gh/
+
+# ---- 自维护系统（2026-09-17 起）----
+# 快照：每次维护的"文件前像副本"，体积随维护累积，且是历史时刻的副本而非源码
+self_maintenance/snapshots/
+# 工作台：实验产物；只保留说明文件（它是实验室，不是资产）
+self_maintenance/workbench/*
+!self_maintenance/workbench/README.md
+
+
+# Windows 保留设备名文件（git-bash 下 2>nul 的产物，git 无法索引，会让 add 整体 fatal）
+nul
+/nul

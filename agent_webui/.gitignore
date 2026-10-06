@@ -1,0 +1,16 @@
+# ---- Python 网关虚拟环境（按 README 一条命令重建，绝不提交）----
+venv-gateway/
+__pycache__/
+*.py[cod]
+
+# ---- Node 依赖与构建产物 ----
+frontend/node_modules/
+frontend/dist/
+
+# ---- 运行时产物（本地状态，不属于源码）----
+logs/
+.trash/
+.tmp_*
+.install_*.log
+.install_*.err
+scripts/*.result.json
