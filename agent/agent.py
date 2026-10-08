@@ -1274,14 +1274,18 @@ def _with_mode_notice(messages: List[Dict[str, Any]], session_id: str) -> List[D
         都一条不加（每轮都带 = 每条消息都多一行、白烧 token，他实测反馈过）；
       · **走 user 通道**（不是 system）：他要的是"追加到 user 通道直达 LLM" ——
         夹在最后一条 user 消息之后、与它同通道；
-      · 格式 `旧权限->新权限：当前权限的一句话`（`permission_modes.notice_text`，
-        界面那块状态块与它同源，不写第二份）；
+      · 格式 `[审批系统自动注入]: 旧权限->新权限：当前权限的一句话`
+        （正文来自 `permission_modes.notice_text`，界面那块状态块与它同源，不写第二份）；
+      · **必须带 `permission_modes.INJECT_PREFIX` 标注**：它走 user 通道，却不是主人
+        说的 —— 不标注模型会把「主人把权限切成了 X」读成主人的原话（主人 2026-10 指出）；
       · 也不写进历史：切几次就堆几条（更早一版的毛病）。
     所以：换档时 `permission_modes.set()` 记一条，这里在下一次请求取走，之后自然消失。
     """
     try:
         import permission_modes as _PM      # noqa: PLC0415
         note = _PM.take_notice(session_id)
+        # 标注取不到也不许丢通知（fail-safe）：顶多退化成“没有标注”，其余行为不变
+        prefix = getattr(_PM, "INJECT_PREFIX", "")
     except Exception as e:
         # 取不到就**照常发请求**（不过是少一行告知，门还在），但要留痕
         try:
@@ -1292,7 +1296,7 @@ def _with_mode_notice(messages: List[Dict[str, Any]], session_id: str) -> List[D
         return messages
     if not note:
         return messages
-    return list(messages) + [{"role": "user", "content": note}]
+    return list(messages) + [{"role": "user", "content": prefix + note}]
 
 
 def _install_restore_provider(conversation: List[Dict[str, Any]], session_id: str) -> None:

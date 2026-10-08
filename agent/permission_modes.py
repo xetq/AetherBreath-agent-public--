@@ -68,6 +68,15 @@ def status_of(mode: str) -> str:
     return STATUS.get(normalize(mode), STATUS[DEFAULT_MODE])
 
 
+# 「谁在说话」的标注（2026-10）：这条通知走 **user 通道**，但它**不是主人说的话** ——
+# 是审批系统按权限模式自动注入的（主人原话：“走的是 user 通道，你会误以为是我发的”）。
+# 注入侧 `agent._with_mode_notice` 在正文前加上它，模型才知道该把“权限被切成了 X”
+# 读成系统事件、而不是主人的原话。
+# 只加在**注入侧**、不改 `notice_text` 本体：那个函数管“文案生成”（格式被测试与
+# 文档引用），而前缀表达的是“这条消息从哪来”，属于通道的事。
+INJECT_PREFIX = "[审批系统自动注入]: "
+
+
 def notice_text(previous: str, current: str) -> str:
     """切换时要发给模型的那一行（主人 2026-10 定的口径）：
 

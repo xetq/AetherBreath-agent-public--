@@ -331,14 +331,18 @@ PM.set(_nsid, PM.MODE_WORKSPACE)
 _out = AG._with_mode_notice(list(_base), _nsid)
 ck("切档后下一次请求带上一行（**user 通道**，格式含旧->新）",
    len(_out) == len(_base) + 1 and _out[-1]["role"] == "user"
-   and _out[-1]["content"].startswith("普通权限->工作区权限："), str(_out[-1])[:64])
+   and _out[-1]["content"].startswith(PM.INJECT_PREFIX + "普通权限->工作区权限："),
+   str(_out[-1])[:84])
+ck("注入的那一行自带来源标注（它是审批系统发的，不是主人说的）",
+   _out[-1]["content"].startswith("[审批系统自动注入]: "), str(_out[-1])[:84])
 ck("再下一次就不带了（取走即清，不每轮重复）",
    len(AG._with_mode_notice(list(_base), _nsid)) == len(_base))
 ck("原列表一字未改（瞬时拼装，不落盘）",
    _base == [{"role": "user", "content": "干活"}], str(_base))
 PM.set(_nsid, PM.MODE_READONLY)
 ck("再切换又有新的一行，且旧侧是上一次的档",
-   AG._with_mode_notice(list(_base), _nsid)[-1]["content"].startswith("工作区权限->仅读权限："))
+   AG._with_mode_notice(list(_base), _nsid)[-1]["content"]
+   .startswith(PM.INJECT_PREFIX + "工作区权限->仅读权限："))
 PM.set(_nsid, PM.MODE_READONLY)
 ck("切到同一档不产生通知（值没变就不打扰）",
    len(AG._with_mode_notice(list(_base), _nsid)) == len(_base))
@@ -370,8 +374,9 @@ _t1, _e1 = _turn("你好")
 ck("开机后第一次请求告知一次（模型此前不知道是工作区档）", len(_e1) == 1, str(len(_e1)))
 ck("那一行走 **user** 通道（不是 system）", _e1[0]["role"] == "user",
    str(_e1[0]["role"]) if _e1 else "-")
-ck("格式就是 `旧权限->新权限：一句话`，且短",
-   _e1[0]["content"].startswith("普通权限->工作区权限：") and len(_e1[0]["content"]) <= 60,
+ck("格式就是 `[审批系统自动注入]: 旧权限->新权限：一句话`，且短",
+   _e1[0]["content"].startswith(PM.INJECT_PREFIX + "普通权限->工作区权限：")
+   and len(_e1[0]["content"]) <= 60 + len(PM.INJECT_PREFIX),
    _e1[0]["content"])
 _t2, _e2 = _turn("继续")
 _t3, _e3 = _turn("再继续")
@@ -381,7 +386,8 @@ ck("没通知时原文一字不改", _t3[-1]["content"] == "再继续")
 PM.set(_u, PM.MODE_READONLY)
 _t4, _e4 = _turn("现在呢")
 ck("真的换档了：下一次请求带一行，旧侧是上一次的档",
-   len(_e4) == 1 and _e4[0]["content"].startswith("工作区权限->仅读权限："),
+   len(_e4) == 1
+   and _e4[0]["content"].startswith(PM.INJECT_PREFIX + "工作区权限->仅读权限："),
    _e4[0]["content"] if _e4 else "-")
 _t5, _e5 = _turn("还有呢")
 PM.set(_u, PM.MODE_READONLY)
